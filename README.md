@@ -1,6 +1,6 @@
 # Website for Web Development
 Hosted using the University of Kentucky's Multilab
-Can access by going to (http://cs.uky.edu/~caco375/)http://cs.uky.edu/~caco375/
+Can access by going to http://cs.uky.edu/~caco375/
 
 ## Images
 Just a directory of all the images I store and use in my websire
