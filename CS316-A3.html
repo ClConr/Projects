@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HiCard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.css" integrity="sha512-KXol4x3sVoO+8ZsWPFI/r5KBVB/ssCGB5tsv2nVOKwLg33wTFP3fmnXa47FdSVIshVTgsYk/1734xSk9aFIa4A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style> 
+        #gameArea {
+            align-items: center;
+            display: flex;
+            justify-content: center;
+        }
+        #p1card, #p2card {
+            display: inline-block;
+        }
+        .ui.column {
+            margin: 0px;
+            text-align: center;
+            padding: 2px;
+        
+        }
+        .card {
+            padding: 10px;
+        }
+        .card>.content {
+            text-align: center;
+            font-size: 15px;
+        }
+        button.ui.button {
+            background-color: light-grey;
+
+        }
+    
+    </style>
+</head>
+<body>
+    <h2 class ="ui center aligned header">HiCard</h2>
+    <div class="ui inverted segment" style="background-color: rgb(50, 50, 50);">
+        Deck Stats
+        <div class="ui equal width grid">
+            <div class="ui row">
+                <div class="ui column">
+                    <div class="ui inverted segment">Deck ID</div>
+                </div>
+                <div class="ui column">
+                    <div class="ui inverted segment">Cards Remaining</div>
+                </div>
+                <div class="ui column">
+                    <div class="ui inverted segment">Hands Played</div>
+                </div>
+                <div class="ui column">
+                    <div class="ui inverted segment">Ties Occurred</div>
+                </div>
+            </div>
+            <div class="ui row">
+                <div class="ui column" id="deckIndex">
+                    <span>--------</span>
+                </div>
+                <div id="remain" class="ui column">
+                    52
+                </div>
+                <div id="hands"class="ui column">
+                    0
+                </div>
+                <div id="ties" class="ui column">
+                    0
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <div class="ui segment">
+        <div class="ui top attached label">Controls</div>
+        <button class="ui button" id="drawCard">Draw</button>
+        <button class="ui button" id="newDeck">New Deck</button>
+        <button class="ui button" id="shuffle">Shuffle</button>
+    </div>
+    <div id="gameArea" class="d-flex justifiy-content-center" style="align-content: center;">
+        <div id="p1card"class="card">
+            <div class="content">Player 1</div>
+            <img src="https://deckofcardsapi.com/static/img/back.png" id="p1cardimg">
+            <div class="content" id="player1wins">Wins: 0</div>
+        </div>
+        <div id="p2card" class="card">
+            <div class="content">Player 2</div>
+            <img src="https://deckofcardsapi.com/static/img/back.png"  id="p2cardimg">
+            <div class="content" id="player2wins">Wins: 0</div>
+        </div>
+    </div>
+    <div id = "prevRes" class="ui segment">
+        <div class="ui top attached label">Previous Results</div> 
+        
+    </div>
+    <div id="eventInfo" class="ui segment">
+        <div class="ui top attached label">Event Info</div>
+    </div>
+    <script>
+        console.log("script loaded")
+        let remaining;
+        let deckId;
+        let player1Wins = 0;
+        let player2Wins = 0;
+        let numTies = 0;
+
+        const dc = document.querySelector("#drawCard");
+        const nd = document.querySelector("#newDeck");
+        const sh = document.querySelector("#shuffle");
+        eventInfo = document.getElementById("eventInfo");
+        previous = document.getElementById("prevRes")
+        let p1Color = document.getElementById("p1card").style.backgroundColor;
+        let p2Color = document.getElementById("p2card").style.backgroundColor;
+        
+        dc.addEventListener("click", drawCard);
+        nd.addEventListener("click", newDeck);
+        sh.addEventListener("click", shuffle)
+        
+        async function newDeck() {
+            await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1").then(async (response) =>{
+            const data = await response.json();
+            
+            //Assign data to values
+            remaining = data.remaining;
+            deckId = data.deck_id;
+            player1Wins = 0;
+            player2Wins = 0;
+            
+            //Reset Button
+            document.getElementById("drawCard").disabled = false;
+            document.getElementById("drawCard").style.backgroundColor = "lightGrey";
+            
+            //Update document with data from api
+            document.getElementById("deckIndex").innerText = deckId;
+            document.getElementById("remain").innerText = remaining;
+            document.getElementById("player1wins").innerText = "Wins: " + player1Wins;
+            document.getElementById("player2wins").innerText = "Wins: " + player2Wins;
+            
+            //Catches any errors and sends a copy to console and event info
+            }).catch((error) => {
+                console.log(`Error from Fetch: ${error}`);
+                divLog(error);
+            });
+        }
+        
+        async function drawCard() {
+            await fetch("https://deckofcardsapi.com/api/deck/"+deckId+"/draw/?count=2").then(async (response) =>{
+            const data = await response.json();
+
+            const card1 = data.cards[0];
+            const card2 = data.cards[1];
+            remaining = data.remaining;
+            let handsPlayed = (52 - remaining) / 2;
+            if (remaining == 0){
+                document.getElementById("drawCard").disabled = true;
+                document.getElementById("drawCard").style.backgroundColor = "red";
+                eventInfo.innerHTML += "<pre>Deck Empty: Shuffle or get a New One</pre>";
+            }
+            else{
+                document.getElementById("drawCard").disabled = false;
+                document.getElementById("drawCard").style.backgroundColor = "lightGrey";
+
+            }
+
+           
+
+            document.getElementById("hands").innerText = handsPlayed;
+            document.getElementById("remain").innerText = remaining;
+            var img1 = document.getElementById("p1cardimg");
+            var img2 = document.getElementById("p2cardimg");
+            img1.src = card1.image;
+            img2.src = card2.image;
+            
+            const player1Value = getValue(card1.value);
+            const player2Value = getValue(card2.value);
+    
+            if (player1Value > player2Value) {
+                player1Wins++;
+                document.getElementById("player1wins").textContent = "Wins: " + player1Wins;
+                document.getElementById("p1card").style.backgroundColor = "green";
+                document.getElementById("p2card").style.backgroundColor = "white";
+            } else if (player2Value > player1Value) {
+                player2Wins++;
+                document.getElementById("player2wins").textContent = "Wins: " + player2Wins;
+                document.getElementById("p2card").style.backgroundColor = "green";
+                document.getElementById("p1card").style.backgroundColor = "white";
+            }
+            else if (player2Value == player1Value){
+                numTies++;
+                document.getElementById("ties").textContent = "Ties: " + numTies;
+                document.getElementById("p1card").style.backgroundColor = "gold";
+                document.getElementById("p2card").style.backgroundColor = "gold";
+            }
+            }).catch((error) => {
+                console.log(`Error from Fetch: ${error}`);
+                divLog(error);
+            });
+        }
+    
+        function getValue(cardValue) {
+            switch (cardValue) {
+                case 'ACE':
+                    return 1;
+                case 'JACK':
+                    return 10;
+                case 'QUEEN':
+                    return 11;
+                case 'KING':
+                    return 12;
+                default:
+                    return parseInt(cardValue);
+            }
+        }
+        async function shuffle (){
+            await fetch("https://deckofcardsapi.com/api/deck/"+deckId+"/shuffle/").then(async (response) => {
+            const data = await response.json();
+            results(player1Wins, player2Wins);
+            player1Wins=0; player2Wins = 0;
+            document.getElementById("player1wins").innerText = "Wins: " + player1Wins;
+            document.getElementById("player2wins").innerText = "Wins: " + player2Wins;
+
+            //Reset Button
+            document.getElementById("drawCard").disabled = false;
+            document.getElementById("drawCard").style.backgroundColor = "lightGrey";
+
+
+        }).catch((error) =>{
+            console.log(`Error from Fetch: ${error}`);
+            divLog(error);
+        });
+        }
+        function divLog(error) {
+            eventInfo.innerHTML += "<pre>" + error + "</pre>";
+        }
+        function results(x, y){
+            previous.innerHTML += "<p> Player1 Wins: " + x + " Player2 Wins: " + y + "</p>";
+
+        }
+    
+       
+    </script>
+</body>
+</html>
